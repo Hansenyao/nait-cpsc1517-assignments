@@ -1,0 +1,151 @@
+﻿@page "/report"
+<PageTitle>Report</PageTitle>
+@rendermode InteractiveServer
+@using RegistrationSystem;
+
+<h3>Registration Report</h3>
+<!-- area to feedback messages-->
+@if (feedback.Length > 0)
+{
+    <div class="alert alert-info">
+        <p>@feedback</p>
+    </div>
+}
+
+<!-- this area is to display a collection of messages that are within the
+    error message container (List<>) collection
+-->
+@if (errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <p>Please fix the following issues:</p>
+        <ul>
+            @foreach (var error in errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<!-- TODO: Activity 5
+    Place your tabular controls here
+    If there are not records to display, show appropriate message
+    If there are records to display, show the records in a table
+-->
+@if (registrations.Count == 0)
+{
+    <div class="alert alert-info">
+        <p>No registration to display.</p>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Serial Number</th>
+                <th>DofP</th>
+                <th>Retailer</th>
+                <th>Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in registrations)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.SerialNumber</td>
+                    <td>@item.DateOfPurchase.ToString("MMM dd,yyyy")</td>
+                    <td>@item.PurchasedFrom</td>
+                    <td>@item.PurchaseProvince</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private string feedback = "";
+    private List<string> errors = new List<string>();
+
+    <!-- TODO: Activity 5
+    Place your data variables for your tabular report here
+    -->
+    private List<Registration> registrations = [];
+
+
+    protected override void OnInitialized()
+    {
+        //Test files have been supplied for your testing
+
+        string fileName = @"./Data/RegistrationsGood.csv";
+        //string fileName = @"./Data/RegistrationsBad.csv";
+        //string fileName = @"./Data/RegistrationsEmpty.csv";
+
+        <!-- TODO: Activity 5
+        Place your code to load your Registration data for your tabular report here
+        -->
+        ReadRegistrationsFromFile(fileName);
+
+        base.OnInitialized();
+    }
+
+     /*
+      *  To read all registration data from a CSV file
+      *  and parse each line string to a registration object.
+      *  All registration objects will be saved in registrations.
+      *
+     */
+    private void ReadRegistrationsFromFile(string filePath)
+    {
+        // Reset error message list
+        errors.Clear();
+
+        // Try to read all registration data from CSV file
+        string[] registrationsData = [];
+        try
+        {
+            registrationsData = File.ReadAllLines(filePath);
+        }
+        catch (FileNotFoundException ex)
+        {
+            errors.Add($"File {filePath} does not exist. Detail Info: {GetInnerException(ex).Message}");
+            return;
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"Failed to read file {filePath}. Detail Info: {GetInnerException(ex).Message}");
+            return;
+        }
+
+        // Try to parse lines and construct Registration objects
+        int itemIndex = 0;
+        foreach (string line in registrationsData)
+        {
+            try
+            {
+                // For each line, construct a Review object instance
+                // and we need to skip blank lines
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    itemIndex++;
+                    registrations.Add(Registration.Parse(line));
+                }
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Record Error: {itemIndex}: {GetInnerException(ex).Message}");
+            }
+        }
+    }
+
+    private Exception GetInnerException(Exception ex)
+    {
+        while (ex.InnerException != null)
+            ex = ex.InnerException;
+        return ex;
+    }
+}

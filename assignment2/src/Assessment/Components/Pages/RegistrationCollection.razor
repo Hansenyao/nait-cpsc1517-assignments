@@ -1,0 +1,228 @@
+﻿@page "/collection"
+<PageTitle>Collection</PageTitle>
+@rendermode InteractiveServer
+@using RegistrationSystem;
+@using System.Text.RegularExpressions;
+
+<h3>Registration: Data Collection</h3>
+
+<!-- area to feedback messages-->
+@if (feedback.Length > 0)
+{
+    <div class="alert alert-info">
+        <p>@feedback</p>
+    </div>
+}
+
+<!-- this area is to display a collection of messages that are within the
+    error message container (List<>) collection
+-->
+@if (errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <p>Please fix the following issues:</p>
+        <ul>
+            @foreach (var error in errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<!-- TODO: Activity 2
+     Place your data collection controls here
+ -->
+ 
+<!--Data Form Area-->
+<fieldset class="row">
+    <div class="col col-4">
+        <!--Product Name-->
+        <div class="row form-group">
+            <label for="productName" class="col-sm-4 col-form-label">Product:</label>
+            <div class="col-8">
+                <input type="text" class="form-control" id="productName" placeHolder="product name" @bind="productName" />
+            </div>
+        </div>
+        <br />
+
+        <!--Serial Number-->
+        <div class="row form-group">
+            <label for="serialNumber" class="col-sm-4 col-form-label">Serial Number:</label>
+            <div class="col-8">
+                <input type="text" class="form-control" id="serialNumber" placeHolder="serial number" @bind="serialNumber" />
+            </div>
+        </div>
+        <br />
+
+        <!--Serial Number-->
+        <div class="row form-group">
+            <label for="purchaseDate" class="col-sm-4 col-form-label">Purchase Date:</label>
+            <div class="col-8">
+                <input type="date" id="purchaseDate" @bind="purchaseData" />
+            </div>
+        </div>
+        <br />
+
+        <!--Retailer Name-->
+        <div class="row form-group">
+            <label for="retailerName" class="col-sm-4 col-form-label">Retailer:</label>
+            <div class="col-8">
+                <input type="text" class="form-control" id="purchaseDate" placeHolder="retailer name" @bind="retailer" />
+            </div>
+        </div>
+        <br />
+
+        <!--Province-->
+        <div class="row form-group">
+            <label for="provice" class="col-sm-4 col-form-label">Province:</label>
+            <div class="col-8">
+                <select class="form-select" id="provice" @bind="province">
+                    <option value="">Select a province...</option>
+                    @foreach (var item in provinces)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <br />
+        <br />
+        <!--Buttons Area-->
+        <div class="text-center">
+            <button type="submit" class="btn btn-outline-primary rounded-pill" @onclick="OnSave">Save</button>
+            <button class="btn btn-outline-warning rounded-pill" @onclick="OnClear">Clear</button>
+        </div>
+    </div>
+
+</fieldset>
+
+@code {
+    private string feedback = "";
+    private List<string> errors = new List<string>();
+
+    //TODO: Activity 2
+    // place your input control bind variables here
+    private string productName = string.Empty;
+    private string serialNumber = string.Empty;
+    private string retailer = string.Empty;
+    private string province = string.Empty;
+    private DateTime purchaseData;
+    //
+    private List<string> provinces = [];
+
+    // Inject a service to prompt message to user
+    [Inject] IJSRuntime JSRuntime { get; set; }
+
+    protected override void OnInitialized()
+    {
+        //TODO: Activity 2
+        //set your Date of Purchase variable to today's date.
+        purchaseData = DateTime.Today;
+
+        // Initiale provices list
+        provinces = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YK"];
+
+        base.OnInitialized();
+    }
+
+    public async void OnClear()
+    {
+        //TODO: Activity 3
+        object[] messageLine = new object[] { "All unsaved data will loss. Are you sure you want to clear the form?" };
+        if (await JSRuntime.InvokeAsync<bool>("confirm", messageLine))
+        {
+            feedback = string.Empty;
+            errors.Clear();
+            //
+            productName = string.Empty;
+            serialNumber = string.Empty;
+            retailer = string.Empty;
+            province = string.Empty;
+            purchaseData = DateTime.Today;
+
+            // Update elements in UI
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void OnSave()
+    {
+        //TODO: Activity 4
+        //use this event to handle your Save button
+        feedback = string.Empty;
+        errors.Clear();
+
+        //validation
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            errors.Add("Product name is a required field.");
+        }
+        if (string.IsNullOrWhiteSpace(serialNumber))
+        {
+            errors.Add("Serial number is a required field.");
+        }
+        else
+        {
+            const string REGEX_PATTERN_SN = @"[A-Z][A-Z][A-Z][0-9][0-9][0-9][A-Z]-[A-Z][A-Z]";
+            Regex regex = new Regex(REGEX_PATTERN_SN);
+            if (!regex.IsMatch(serialNumber.Trim()))
+            {
+                errors.Add($"Serial number {serialNumber} is not valid. Format should look like HTK109G-KL");
+            }
+        }
+        if (purchaseData > DateTime.Today)
+        {
+            errors.Add("Date of Purchase must be today or in the past.");
+        }
+        if (string.IsNullOrWhiteSpace(retailer))
+        {
+            errors.Add("Purchased from retailer is a required field.");
+        }
+        if (string.IsNullOrWhiteSpace(province))
+        {
+            errors.Add("Purchased province is a required field.");
+        }
+
+        // Return directly if there are any errors
+        if (errors.Count > 0)
+        {
+            return;
+        }
+
+        try
+        {
+            // Construct a new registration object instance
+            Registration registration = new Registration(productName, serialNumber, purchaseData, retailer, province);
+
+            // Save the new registration to CSV in a new line
+            const string CSV_FILE_NAME = @"Data/RegistrationsGood.csv";
+            string reviewLine = $"{registration}\n";
+            File.AppendAllText(CSV_FILE_NAME, reviewLine);
+            feedback = $"New registration: {reviewLine} has saved to file.";
+        }
+        catch (ArgumentNullException ex)
+        {
+            errors.Add($"Missing data: {GetInnerException(ex).Message}");
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add($"Invalid data value: {GetInnerException(ex).Message}");
+        }
+        catch (FormatException ex)
+        {
+            errors.Add($"Invalid data format: {GetInnerException(ex).Message}");
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"System error: {GetInnerException(ex).Message}");
+        }
+    }
+
+    private Exception GetInnerException(Exception ex)
+    {
+        while (ex.InnerException != null)
+            ex = ex.InnerException;
+        return ex;
+    }
+}

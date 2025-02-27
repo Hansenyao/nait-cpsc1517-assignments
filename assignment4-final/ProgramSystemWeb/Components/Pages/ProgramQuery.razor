@@ -1,0 +1,103 @@
+﻿@page "/query"
+<PageTitle>Programs by Name</PageTitle>
+
+<h3>Programs by Name</h3>
+
+@if (errorMsgs.Count > 0) 
+{
+    <div class="alert alert-danger">
+        <p>Please fix below bugs:</p>
+        <ul>
+            @foreach(var error in errorMsgs)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="row">
+    <label for="searchName" class="form-label">Enter a program name (or part of):</label>
+    <InputText id="searchName" class="form-control" @bind-Value="searchName"></InputText>
+    <div class="row mt-2">
+        <div class="col-2">
+            <button type="submit" class="btn btn-primary" @onclick="SearchProgramByName">Search</button>
+        </div>
+    </div>
+</div>
+<div class="mt-2">
+    @if (programs.Count == 0)
+    {
+        // No result by search
+        @if (noPrograms)
+        {
+            <h4 class="text-center">No programs which name includes '@searchName'</h4>
+        }
+    }
+    else
+    {
+        <div class="overflow-auto" style="height:65vh;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="text-center">Program</th>
+                        <th class="text-center">Diploma</th>
+                        <th class="text-center">School</th>
+                        <th class="text-center">Tuition</th>
+                        <th class="text-center">International</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = currentPage * COUNT_PER_PAGE; 
+                          (i < (currentPage + 1) * COUNT_PER_PAGE) && (i < programs.Count);
+                          i++)
+                    {
+                        <tr>
+                            <td>
+                                <a class="link-primary" href="/crud/@programs[i].ProgramID">Edit</a>
+                            </td>
+                            <td>@programs[i].ProgramName</td>
+                            <td>@programs[i].DiplomaName</td>
+                            <td>@programs[i].SchoolCodeNavigation.SchoolName</td>
+                            <td>@programs[i].Tuition.ToString("n")</td>
+                            <td>@programs[i].InternationalTuition.ToString("n")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!--Pages Navigation-->
+            <nav class="navigation Page">
+                <ul class="pagination">
+                    <!--First Page-->
+                    <li class="page-item @((currentPage==0) ? "disabled" :"")">
+                        <a class="page-link" aria-label="First" href="javascript:void(0);" @onclick="DispayFirstPage">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <!--Previous Page-->
+                    <li class="page-item @((currentPage==0) ? "disabled" :"")">
+                        <a class="page-link" aria-label="Previous" href="javascript:void(0);" @onclick="DispayPrevPage">
+                            <span aria-hidden="true">&lsaquo;</span>
+                        </a>
+                    </li>
+                    <!--Current Page Number-->
+                    <li class="align-content-center ms-2 me-2">@(currentPage+1) of @totalPages</li>
+                    <!--Next Page-->
+                    <li class="page-item @((currentPage==totalPages-1) ? "disabled" :"")">
+                        <a class="page-link" aria-label="Next" href="javascript:void(0);" @onclick="DispayNextPage">
+                            <span aria-hidden="true">&rsaquo;</span>
+                        </a>
+                    </li>
+                    <!--Last Page-->
+                    <li class="page-item @((currentPage==totalPages-1) ? "disabled" :"")">
+                        <a class="page-link" aria-label="Last" href="javascript:void(0);" @onclick="DispayLastPage">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

@@ -1,0 +1,108 @@
+﻿@page "/crud/{programId:int?}"
+<PageTitle>Program CRUD</PageTitle>
+
+<h3>Program CRUD</h3>
+
+@*Error message area*@
+@if (errorMsgs.Count > 0)
+{
+    <div class="alert alert-danger">
+        <p>Please fix following errors:</p>
+        <ul>
+            @foreach(var error in errorMsgs)
+            {
+                <li>@error</li>
+            }
+        </ul>
+
+    </div>
+}
+
+@*Feedback message area*@
+@if (feedback.Length > 0)
+{
+    <div class="alert alert-info">
+        <p>@feedback</p>
+    </div>
+}
+
+@*Data form area*@
+<EditForm OnValidSubmit="OnSubmit" EditContext="editContext">
+    <DataAnnotationsValidator/>
+    <div class="row mt-5">
+        <div class="col col-2">
+            <label for="school">School Name</label>
+        </div>
+        <div class="col col-3">
+            <InputSelect id="school" class="form-select" @bind-Value="program.SchoolCode" >
+                <option value="">Select a school</option>
+                @foreach(var school in schools)
+                {
+                    <option value="@school.SchoolCode">@school.SchoolName</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => program.SchoolCode)" />
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col col-2">
+            <label for="programName">Program Name</label>
+        </div>
+        <div class="col col-3">
+            <InputText id="programName" class="form-control" @bind-Value="program.ProgramName" />
+            <ValidationMessage For="@(() => program.ProgramName)" />
+        </div>
+        <div class="col col-2">
+            <label for="diplomaName">Diploma Name</label>
+        </div>
+        <div class="col col-3">
+            <InputText id="diplomaName" class="form-control" @bind-Value="program.DiplomaName" />
+            <ValidationMessage For="@(() => program.DiplomaName)" />
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col col-2">
+            <label for="tuition">Tuition</label>
+        </div>
+        <div class="col col-3">
+            <InputNumber id="tuition" class="form-control" @bind-Value="program.Tuition" />
+            <ValidationMessage For="@(() => program.Tuition)" />
+        </div>
+        <div class="col col-2">
+            <label for="internationalTuition">International Tuition</label>
+        </div>
+        <div class="col col-3">
+            <InputNumber id="internationalTuition" class="form-control" @bind-Value="program.InternationalTuition" />
+            <ValidationMessage For="@(() => program.InternationalTuition)" />
+        </div>
+    </div>
+    @*
+    <div class="row mt-5">
+        <div class="col-2 mx-auto">
+            <button type="submit" class="btn btn-primary">@(isNew ? "Add Program" : "Update Program")</button>
+        </div>
+        @if (!isNew)
+        {
+            <div class="col-2 mx-auto">
+                <button onclick="@(() => DeleteProgram())" type="button" class="btn btn-danger mt-2">Delete Program</button>
+            </div>
+        }
+        <div class="col-2 mx-auto">
+            <button onclick="@(() => ClearForm())" type="button" class="btn btn-warning">Clear</button>
+        </div>
+        <div class="col-2 mx-auto">
+            <button onclick="@(() => GoToQuery())" type="button" class="btn btn-warning">Go To Query</button>
+        </div>
+
+    </div>*@
+
+    <div class="mt-5 text-center">
+        <button type="submit" class="btn btn-primary">@(isNew ? "Add" : "Update")</button>
+        @if (!isNew)
+        {
+            <button onclick="@(() => DeleteProgram())" type="button" class="btn btn-danger ms-2">Delete</button>
+        }
+        <button onclick="@(() => ClearForm())" type="button" class="btn btn-warning ms-2">Clear</button>
+        <button onclick="@(() => GoToQuery())" type="button" class="btn btn-warning ms-2">Go To Query</button>
+    </div>
+</EditForm>

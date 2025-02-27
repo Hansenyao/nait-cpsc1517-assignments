@@ -1,0 +1,311 @@
+﻿@page "/regcrud"
+<PageTitle>Register Warranty</PageTitle>
+@using HTPSSystem.BLL;
+@using HTPSSystem.Entities;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+@inject IJSRuntime JSRunTime
+@rendermode InteractiveServer
+
+<h1>Register Warranty</h1>
+<p><strong>Register your product. If you don't see your product please notify us. Ensure 
+    you have previously registered as a customer before registering a product'.</strong></p>
+<br />
+<!-- area to feedback messages-->
+@if (feedback.Length > 0)
+{
+    <div class="alert alert-info">
+        <p>@feedback</p>
+    </div>
+}
+<!-- area to error messages-->
+@if (errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <p>Please fix the following issues:</p>
+        <ul>
+            @foreach (var error in errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+<br />
+
+<!--TODO: 2 Create registration EditForm
+       Create fields for receiving data for a new registration.
+       Use the image in the coding specifications
+       The select controls are to have a prompt line
+       Use a date control for the Date of Purchase
+       DO NOT use OnSubmit event as there are individual buttons
+       Include validation summary and annotation validation messages
+   -->
+<EditForm OnValidSubmit="OnAdd" EditContext="editContext">
+    <DataAnnotationsValidator />
+    @* this area will be for the EditForm inputs*@
+    <div class="row">
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="productID">Product</label>
+            </div>
+            <div class="col col-4">
+                <InputSelect @bind-Value="registration.ProductID" class="form-select" id="productID">
+                    <option value="0">Select</option>
+                    @foreach (var item in productList)
+                    {
+                        <option value="@item.ProductID">@item.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => registration.ProductID)" />
+            </div>
+        </div>
+        <br/>
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="customerID">Customer</label>
+            </div>
+            <div class="col col-4">
+                <InputSelect @bind-Value="registration.CustomerID" class="form-select" id="customerID">
+                    <option value="0">Select</option>
+                    @foreach (var item in customerList)
+                    {
+                        <option value="@item.CustomerID">@item.FullName</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => registration.CustomerID)" />
+            </div>
+        </div>
+        <br />
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="serialNumber">Serial Number</label>
+            </div>
+            <div class="col col-4">
+                <InputText id="serialNumber" class="form-control" @bind-Value="registration.SerialNumber" placeholder="Serial Number" />
+                <ValidationMessage For="@(() => registration.SerialNumber)" />
+            </div>
+        </div>
+        <br />
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="purchaseDate">Date Purchase</label>
+            </div>
+            <div class="col col-4">
+                <InputDate id="purchaseDate" class="form-control" @bind-Value="registration.DateOfPurchase" />
+                <ValidationMessage For="@(() => registration.DateOfPurchase)" />
+            </div>
+        </div>
+        <br />
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="retailer">Retailer</label>
+            </div>
+            <div class="col col-4">
+                <InputText id="retailer" class="form-control" @bind-Value="registration.PurchasedFrom" placeholder="Retailer" />
+                <ValidationMessage For="@(() => registration.PurchasedFrom)" />
+            </div>
+        </div>
+        <br />
+        <div class="row form-group mb-2">
+            <div class="col col-2">
+                <label for="province">Province</label>
+            </div>
+            <div class="col col-4">
+                <InputSelect @bind-Value="registration.PurchaseProvince" class="form-select" id="province">
+                    <option value="">Select</option>
+                    @foreach (var item in provinces)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => registration.PurchaseProvince)" />
+            </div>
+        </div>
+    </div>
+
+    @* this area will be for the EditForm buttons*@
+    <div class="row mt-5 justify-content-center">
+        <button type="submit" class="btn btn-outline-primary rounded-pill" style="width:200px;">
+            Save
+        </button>
+        &nbsp;&nbsp;
+        <button type="button" class="btn btn-outline-secondary rounded-pill"
+                @onclick="OnClear" style="width:200px;">
+            Clear
+        </button>
+        &nbsp;&nbsp;
+        <button type="button" class="btn btn-outline-secondary rounded-pill"
+                @onclick="OnQuery" style="width:200px;">
+            Go to query
+        </button>
+    </div>
+</EditForm>
+
+<br/><br/>
+
+@code {
+    //TODO: 2 Create registration form
+    // see directions above
+    //declare your Edit context instance, validation message instance
+    //     and Registration instance here
+    //initialize the registration DateOfPurchase to DateTime.Today in your OnInitialized() method
+    private Registration registration = new Registration();
+    private EditContext editContext;
+    private ValidationMessageStore validationMessageStore;
+
+    private string feedback = "";
+    private List<string> errors = new List<string>();
+    private string[] provinces = new string[] {"AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU" , "ON", "PE", "QE", "SK", "YT"};
+
+    [Inject]
+    private ProductServices _productServices { get; set; }
+    private List<Product> productList { get; set; }
+
+    [Inject]
+    private CustomerServices _customerServices { get; set; }
+    private List<Customer> customerList { get; set; }
+
+    [Inject]
+    private RegistrationServices _registrationServices { get; set; }
+
+    [Inject]
+    protected NavigationManager CurrentNavigationManager { get; set; }
+
+    [Inject]
+    public IJSRuntime JSRuntime { get; set; }
+
+    private Exception GetInnerException(Exception ex)
+    {
+        while (ex.InnerException != null)
+            ex = ex.InnerException;
+        return ex;
+    }
+
+    protected override void OnInitialized()
+    {
+
+        try
+        {
+            productList = _productServices.Products_Get();
+            customerList = _customerServices.Customers_Get();
+
+            //TODO: 2 Create registration form
+            //initialize DateOfPurchase to today.
+            //initialize your Edit content instance to the registration instance
+            //initialize your Validation message instance to the Edit context instance
+
+            // New Edit content instance
+            editContext = new EditContext(registration);
+
+            // Show purchase date to today in default
+            registration.DateOfPurchase = DateTime.Today;
+
+            // New Validate message instance
+            validationMessageStore = new ValidationMessageStore(editContext);
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"System Error: {ex.Message}");
+        }
+
+        base.OnInitialized();
+    }
+
+    private void OnAdd()
+    {
+        //TODO: 4 Create the necessary code save the entered registration
+        //        Actions:
+        //
+        //        Validation:
+        //          check product, customer and province were selected
+        //          check to see that the date is in the past
+        //
+        //        if registration can be saved,
+        //             display an appropriate message including registration id
+        //
+        //        do processing within user friendly error handling
+        //        On an Exception, display the message(s)
+
+        // Reset messages
+        errors.Clear();
+        feedback = string.Empty;
+        validationMessageStore.Clear();
+
+        if (registration.ProductID == 0)
+        {
+            errors.Add("You must select a product.");
+        }
+        if (registration.CustomerID == 0)
+        {
+            errors.Add("You must select a customer.");
+        }
+        if (string.IsNullOrWhiteSpace(registration.PurchaseProvince))
+        {
+            errors.Add("You must select a province.");
+        }
+
+        // Make sure purchase date is past
+        if (registration.DateOfPurchase > DateTime.Today)
+        {
+            errors.Add("The date of purhcase must be past.");
+        }
+
+        // Add new registration to database
+        if (errors.Count == 0)
+        {
+            try
+            {
+                int newRegistrationId = _registrationServices.AddRegistration(registration);
+                feedback = $"Registration (ID: {newRegistrationId}) has be added to the database.";
+
+                // Clear all old inputs
+                registration.ProductID = 0;
+                registration.CustomerID = 0;
+                registration.SerialNumber = string.Empty;
+                registration.DateOfPurchase = DateTime.Today;
+                registration.PurchasedFrom = string.Empty;
+                registration.PurchaseProvince = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                errors.Add(GetInnerException(ex).Message);
+            }
+        }
+    }
+
+
+
+    private async Task OnClear()
+    {
+        //TODO: 3 Reset the registration form to enter new data
+        //        Include a confirmation prompt
+
+        object[] messageLine = new object[] { "Clearing with lose all unsaved data. Are you sure you want to clear the form?" };
+        if (await JSRuntime.InvokeAsync<bool>("confirm", messageLine))
+        {
+            feedback = string.Empty;
+            errors.Clear();
+            registration.ProductID = 0;
+            registration.CustomerID = 0;
+            registration.SerialNumber = string.Empty;
+            registration.DateOfPurchase = DateTime.Today;
+            registration.PurchasedFrom = string.Empty;
+            registration.PurchaseProvince = string.Empty;
+
+            // Call async function to update page
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    private async Task OnQuery()
+    {
+        //TODO: 3 Return to the Registrations page
+        //        Include a confirmation prompt
+
+        object[] messageLine = new object[] { "Leave this page will lose all unsaved data. Are you sure you want to clear the form?" };
+        if (await JSRuntime.InvokeAsync<bool>("confirm", messageLine))
+        {
+            CurrentNavigationManager.NavigateTo("registrations");
+        }
+    }
+}

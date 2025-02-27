@@ -1,0 +1,107 @@
+﻿@page "/registrations"
+<PageTitle>Registrations</PageTitle>
+@using HTPSSystem.BLL;
+@using HTPSSystem.Entities;
+
+<h1>Registration List</h1>
+<p><strong>Registrations are sorted from most recent entry to oldest entry.</strong></p>
+<br />
+<!-- area to feedback messages-->
+@if (feedback.Length > 0)
+{
+    <div class="alert alert-info">
+        <p>@feedback</p>
+    </div>
+}
+<!-- area to error messages-->
+@if (errors.Count > 0)
+{
+    <div class="alert alert-danger">
+        <p>Please fix the following issues:</p>
+        <ul>
+            @foreach (var error in errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+<br />
+<div class="row">
+    <div class="col-md-12 text-center">
+        <button type="submit" class="btn btn-outline-info rounded-pill">
+            <NavLink href="regcrud">New Registration</NavLink>
+        </button>
+    </div>
+</div>
+<br />
+<div class="row">
+    <p><strong>Display result of query</strong></p>
+    @if (registrationList.Count > 0)
+    {
+
+        <div class="overflow-scroll" style="height:450px;">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Customer</th>
+                        <th>Date of Purchase</th>
+                        <th>Retailer</th>
+                        <th>Prov</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in registrationList)
+                    {
+                        <tr>
+                            <td>@item.RegistrationID</td>
+                            <td>@item.Product.Name</td>
+                            <td>@item.Customer.FullName</td>
+                            <td>@item.DateOfPurchase.ToShortDateString()</td>
+                            <td>@item.PurchasedFrom</td>
+                            <td>@item.PurchaseProvince</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p> No registration data found</p>
+    }
+</div>
+@code {
+    private string feedback = "";
+    private List<string> errors = new List<string>();
+
+    [Inject]
+    private ProductServices _productServices { get; set; }
+    private List<Product> productList { get; set; }
+
+    [Inject]
+    private CustomerServices _customerServices { get; set; }
+    private List<Customer> customerList { get; set; }
+
+    [Inject]
+    private RegistrationServices _registrationServices { get; set; }
+    private List<Registration> registrationList { get; set; } = new List<Registration>();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            productList = _productServices.Products_Get();
+            customerList = _customerServices.Customers_Get();
+            registrationList = _registrationServices.Registrations_Get();
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"System Error: {ex.Message}");
+        }
+
+        base.OnInitialized();
+    }
+}
